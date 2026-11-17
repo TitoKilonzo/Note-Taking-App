@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+}
+enum NoteStatus {
+  ACTIVE
+  ARCHIVED
+  TRASHED
+}
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  notes        Note[]
+  categories   Category[]
+  tags         Tag[]
+}
+model Note {
+  id          String     @id @default(cuid())
+  title       String     @default("Untitled note")
+  content     Json
+  plainText   String     @default("")
+  isFavorite  Boolean    @default(false)
+  isPinned    Boolean    @default(false)
+  status      NoteStatus @default(ACTIVE)
+  userId      String
+  categoryId  String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags        NoteTag[]
+  @@index([userId, status, updatedAt])
+  @@index([userId, isFavorite])
+}
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#D77B27")
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes     Note[]
+  @@unique([userId, name])
+}
+model Tag {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#8B65A8")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes     NoteTag[]
+  @@unique([userId, name])
+}
+model NoteTag {
+  noteId String
+  tagId  String
+  note   Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  @@id([noteId, tagId])
+}

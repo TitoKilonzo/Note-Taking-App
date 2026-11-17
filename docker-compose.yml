@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:18.7
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: noted
+      POSTGRES_USER: noted
+      POSTGRES_PASSWORD: noted_local_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - noted_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U noted -d noted"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  noted_postgres:
