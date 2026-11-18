@@ -33,9 +33,9 @@ type Page = 'home' | 'about' | 'auth' | 'workspace';
 type ApiOptions = RequestInit & { token?: string | null };
 type CollectionEditor = { kind: 'category' | 'tag'; id?: string; name: string; color: string };
 
-const API_URL = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
-  : '/api';
+const configuredApiOrigin = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '') ?? '';
+const apiOrigin = configuredApiOrigin || (import.meta.env.PROD ? 'https://note-taking-app-server-rho.vercel.app' : '');
+const API_URL = apiOrigin ? `${apiOrigin}/api` : '/api';
 const categoryPalette = ['#d77b27', '#7297c4', '#8e70ae', '#4f9d79', '#d46969'];
 const tagPalette = ['#8b65a8', '#4f9d79', '#d77b27', '#598ab5'];
 
@@ -49,6 +49,9 @@ async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
       ...headers,
     },
   });
+  if (response.status === 404 && import.meta.env.PROD) {
+    throw new Error(`The Noted API at ${API_URL} returned 404. Check that VITE_API_URL points to your server deployment, not the client deployment.`);
+  }
   if (!response.ok) {
     const result = await response.json().catch(() => ({})) as { error?: string };
     if (!result.error && response.status >= 500) {
